@@ -1,0 +1,25 @@
+# Harbor runtime data (must not be versioned)
+harbor-data/
+certs/
+
+# Local/generated Harbor config
+harbor.yml
+docker-compose.yml
+common/config/
+common/templates/
+
+# Offline image bundle and downloaded installers
+harbor.v*.tar.gz
+harbor-offline-installer-*.tgz
+downloads/
+artifacts/
+
+# Temporary work dirs
+.tmp-harbor-bundle/
+tmp/
+.cache/
+
+# OS/editor noise
+.DS_Store
+*.swp
+*.swo
