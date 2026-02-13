@@ -35,9 +35,14 @@ Runtime:
 ```bash
 make up
 make down
+make recover
 make status
 make logs SERVICE=core
 ```
+
+Notes:
+- `make up` now auto-detects Harbor container-name conflicts and retries after cleaning stale exited containers.
+- Use `make recover` to manually clean stale Harbor containers before startup when needed.
 
 Certificate/Trust:
 

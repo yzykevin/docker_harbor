@@ -16,7 +16,7 @@ TRUST_ARGS ?=
 BUNDLE_ARGS ?=
 PREFLIGHT_ARGS ?=
 
-.PHONY: help preflight install up down down-purge restart status logs cert-ensure cert-renew cert-status trust-install trust-remove trust-status bundle-latest bundle-check bundle-download bundle-extract bundle-upgrade bundle-cleanup redirect-check
+.PHONY: help preflight install up down down-purge restart recover status logs cert-ensure cert-renew cert-status trust-install trust-remove trust-status bundle-latest bundle-check bundle-download bundle-extract bundle-upgrade bundle-cleanup redirect-check
 
 help:
 	@echo "Harbor Project Make Entry"
@@ -30,6 +30,7 @@ help:
 	@echo "  make down"
 	@echo "  make down-purge"
 	@echo "  make restart"
+	@echo "  make recover"
 	@echo "  make status"
 	@echo "  make logs [SERVICE=core]"
 	@echo
@@ -75,6 +76,9 @@ down-purge:
 
 restart:
 	@bash $(CTL_SCRIPT) restart
+
+recover:
+	@bash $(CTL_SCRIPT) recover
 
 status:
 	@bash $(CTL_SCRIPT) status
