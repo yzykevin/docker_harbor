@@ -8,17 +8,18 @@ COMPOSE_FILE="${ROOT_DIR}/docker-compose.yml"
 usage() {
   cat <<'EOF'
 Preferred unified entry:
-  make <up|down|restart|recover|status>
+  make <up|down|restart|recover|boot|status>
   make logs [SERVICE=core]
 
 Usage:
-  ./scripts/harbor_ctl.sh <up|down|restart|recover|status|logs> [options]
+  ./scripts/harbor_ctl.sh <up|down|restart|recover|boot|status|logs> [options]
 
 Commands:
   up                     Start Harbor stack
   down                   Stop Harbor stack (preserve data)
   restart                Restart Harbor stack
   recover                Remove stale exited Harbor containers with fixed names
+  boot                   Startup self-heal (wait docker, clean conflicts, start Harbor)
   status                 Show Harbor container status
   logs [service]         Show logs, optionally by service
 
@@ -81,6 +82,33 @@ cleanup_stale_containers() {
     log "Removed stale container: ${name} (${status})"
   done
   log "Recover summary: cleaned=${cleaned}, skipped_running=${skipped}"
+}
+
+cleanup_all_named_containers() {
+  local cleaned=0
+  local name id status
+  for name in "${HARBOR_NAMES[@]}"; do
+    id="$(docker ps -aq --filter "name=^/${name}$" | head -n 1)"
+    [[ -n "${id}" ]] || continue
+    status="$(docker inspect -f '{{.State.Status}}' "${id}" 2>/dev/null || echo unknown)"
+    docker rm -f "${id}" >/dev/null 2>&1 || true
+    cleaned=$((cleaned + 1))
+    log "Removed container for boot heal: ${name} (${status})"
+  done
+  log "Boot heal cleanup summary: removed=${cleaned}"
+}
+
+wait_docker_ready() {
+  local timeout_sec="${1:-300}"
+  local elapsed=0
+  local step=2
+  while ! docker info >/dev/null 2>&1; do
+    sleep "${step}"
+    elapsed=$((elapsed + step))
+    if (( elapsed >= timeout_sec )); then
+      fail "Docker is not ready after ${timeout_sec}s."
+    fi
+  done
 }
 
 compose_up_with_recovery() {
@@ -152,6 +180,14 @@ main() {
     recover)
       log "Cleaning stale Harbor containers..."
       cleanup_stale_containers
+      ;;
+    boot)
+      log "Boot self-heal: waiting for Docker daemon..."
+      wait_docker_ready 420
+      log "Boot self-heal: removing potentially conflicting Harbor containers..."
+      cleanup_all_named_containers
+      log "Boot self-heal: starting Harbor..."
+      compose_up_with_recovery
       ;;
     status)
       "${COMPOSE_CMD[@]}" -f "${COMPOSE_FILE}" ps

@@ -36,6 +36,7 @@ Runtime:
 make up
 make down
 make recover
+make boot
 make status
 make logs SERVICE=core
 ```
@@ -43,6 +44,7 @@ make logs SERVICE=core
 Notes:
 - `make up` now auto-detects Harbor container-name conflicts and retries after cleaning stale exited containers.
 - Use `make recover` to manually clean stale Harbor containers before startup when needed.
+- `make boot` is startup self-heal: wait Docker ready, clean conflicting Harbor containers, then start Harbor.
 
 Certificate/Trust:
 
@@ -52,6 +54,17 @@ make cert-renew CERT_ARGS="--hostname 10.0.0.16 --alt-names DNS:localhost,IP:127
 make trust-install
 make trust-status
 ```
+
+Image push (tag + push in one step):
+
+```bash
+make push IMAGE=rocky8:dev PROJECT=ic REGISTRY=harbor.sostrt.com LOGIN=1 USERNAME=<your-user>
+```
+
+Notes:
+- Do not use `https://` in image reference or `REGISTRY`.
+- `unauthorized` is usually account/project permission issue, not certificate trust.
+- Certificate trust problems typically show as `x509`/TLS errors.
 
 ## Official Harbor Update Flow
 
@@ -91,6 +104,30 @@ Validation:
 ```bash
 make redirect-check
 ```
+
+## macOS Auto Start (Self-Heal)
+
+Install login autostart job:
+
+```bash
+make autostart-install
+```
+
+Check status:
+
+```bash
+make autostart-status
+```
+
+Remove autostart:
+
+```bash
+make autostart-remove
+```
+
+Notes:
+- This launchd job runs `make boot` at login.
+- Harbor has 9+ containers (DB/registry/core/nginx/log etc.), so Docker Desktop startup time will be noticeably longer when Harbor auto-start is enabled.
 
 ## Platform Support
 

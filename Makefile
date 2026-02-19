@@ -7,6 +7,8 @@ CERT_SCRIPT := ./scripts/manage_harbor_certs.sh
 TRUST_SCRIPT := ./scripts/trust_harbor_ca.sh
 BUNDLE_SCRIPT := ./scripts/manage_harbor_bundle.sh
 PREFLIGHT_SCRIPT := ./scripts/preflight_check.sh
+PUSH_SCRIPT := ./scripts/push_harbor_image.sh
+AUTOSTART_SCRIPT := ./scripts/manage_macos_autostart.sh
 
 ARGS ?=
 TRUST_CA ?= 0
@@ -15,8 +17,15 @@ CERT_ARGS ?=
 TRUST_ARGS ?=
 BUNDLE_ARGS ?=
 PREFLIGHT_ARGS ?=
+IMAGE ?=
+PROJECT ?=
+REGISTRY ?=
+REPO ?=
+TAG ?=
+LOGIN ?= 0
+USERNAME ?=
 
-.PHONY: help preflight install up down down-purge restart recover status logs cert-ensure cert-renew cert-status trust-install trust-remove trust-status bundle-latest bundle-check bundle-download bundle-extract bundle-upgrade bundle-cleanup redirect-check
+.PHONY: help preflight install up down down-purge restart recover boot status logs cert-ensure cert-renew cert-status trust-install trust-remove trust-status bundle-latest bundle-check bundle-download bundle-extract bundle-upgrade bundle-cleanup redirect-check push autostart-install autostart-remove autostart-status
 
 help:
 	@echo "Harbor Project Make Entry"
@@ -31,6 +40,7 @@ help:
 	@echo "  make down-purge"
 	@echo "  make restart"
 	@echo "  make recover"
+	@echo "  make boot"
 	@echo "  make status"
 	@echo "  make logs [SERVICE=core]"
 	@echo
@@ -55,6 +65,14 @@ help:
 	@echo
 	@echo "Validation:"
 	@echo "  make redirect-check"
+	@echo
+	@echo "Image Push:"
+	@echo "  make push IMAGE=rocky8:dev PROJECT=ic [REGISTRY=harbor.sostrt.com[:8443]] [REPO=rocky8] [TAG=dev] [LOGIN=1] [USERNAME=<user>]"
+	@echo
+	@echo "macOS Autostart:"
+	@echo "  make autostart-install"
+	@echo "  make autostart-remove"
+	@echo "  make autostart-status"
 
 preflight:
 	@bash $(PREFLIGHT_SCRIPT) $(PREFLIGHT_ARGS)
@@ -79,6 +97,9 @@ restart:
 
 recover:
 	@bash $(CTL_SCRIPT) recover
+
+boot:
+	@bash $(CTL_SCRIPT) boot
 
 status:
 	@bash $(CTL_SCRIPT) status
@@ -128,3 +149,22 @@ bundle-cleanup:
 
 redirect-check:
 	@curl -sSI http://127.0.0.1:8080/ | sed -n '1,8p'
+
+push:
+	@bash $(PUSH_SCRIPT) \
+		--image "$(IMAGE)" \
+		--project "$(PROJECT)" \
+		$(if $(REGISTRY),--registry "$(REGISTRY)",) \
+		$(if $(REPO),--repo "$(REPO)",) \
+		$(if $(TAG),--tag "$(TAG)",) \
+		$(if $(filter 1 true yes,$(LOGIN)),--login,) \
+		$(if $(USERNAME),--username "$(USERNAME)",)
+
+autostart-install:
+	@bash $(AUTOSTART_SCRIPT) install
+
+autostart-remove:
+	@bash $(AUTOSTART_SCRIPT) remove
+
+autostart-status:
+	@bash $(AUTOSTART_SCRIPT) status
