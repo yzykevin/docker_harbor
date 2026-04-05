@@ -1,0 +1,19 @@
+services:
+  log:
+    restart: "no"
+  registry:
+    restart: "no"
+  registryctl:
+    restart: "no"
+  postgresql:
+    restart: "no"
+  core:
+    restart: "no"
+  portal:
+    restart: "no"
+  jobservice:
+    restart: "no"
+  redis:
+    restart: "no"
+  proxy:
+    restart: "no"
